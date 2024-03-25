@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -12,16 +12,20 @@ class UserSchema(BaseModel):
 
 class ProductBase(BaseModel):
     name: str
+    count: Optional[int]
 
     class Config:
         orm_mode = True
+        allow_population_by_field_name = True
 
 
 class OrderBase(BaseModel):
     user: UserSchema
+    count: Optional[int]
 
     class Config:
         orm_mode = True
+        allow_population_by_field_name = True
 
 
 class ProductSchema(ProductBase):
