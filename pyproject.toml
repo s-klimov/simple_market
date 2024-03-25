@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "simple-market"
+version = "0.1.0"
+description = ""
+authors = ["sergey_klimov <s.klimov@bk.ru>"]
+readme = "README.md"
+packages = [{include = "simple_market"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.110.0"
+uvicorn = "^0.29.0"
+sqlalchemy = "^2.0.29"
+aiosqlite = "^0.20.0"
+pydantic = "^2.6.4"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.3.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
