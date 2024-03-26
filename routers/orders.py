@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Annotated
 
-from fastapi import APIRouter, status, HTTPException
+from fastapi import APIRouter, status, HTTPException, Query, Path
 from sqlalchemy import delete
 from sqlalchemy.future import select
 
@@ -42,7 +42,13 @@ async def get_order(id: int) -> models.Order:
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.OrderSchema,
 )
-async def create_order(user_id: int, product_ids: List[int]) -> models.Order:
+async def create_order(
+    user_id: int = Path(..., gt=0, description="Идентификатор пользователя"),
+    product_ids: Annotated[
+        List[int], Query(description="Список идентификаторов продуктов")
+    ] = ...,
+) -> models.Order:
+    """Создание заказа."""
     order = models.Order(user_id=user_id)
     session.add(order)
     await session.flush()
@@ -60,7 +66,14 @@ async def create_order(user_id: int, product_ids: List[int]) -> models.Order:
 
 
 @router.put("/{id}", tags=["orders"], response_model=schemas.OrderSchema)
-async def edit_order(id: int, product_ids: List[int]) -> models.Order:
+async def edit_order(
+    id: int = Path(..., gt=0, description="Идентификатор заказа"),
+    product_ids: Annotated[
+        List[int], Query(description="Список идентификаторов продуктов")
+    ] = ...,
+) -> models.Order:
+    """Редактирование заказа."""
+
     response = await session.execute(select(models.Order).where(models.Order.id == id))
     order = response.scalar_one_or_none()
     if order is None:
