@@ -4,7 +4,7 @@ from fastapi import FastAPI
 import models
 from database import engine, session
 
-from routers import users
+from routers import users, products
 
 
 app = FastAPI()
@@ -23,11 +23,7 @@ async def shutdown():
 
 
 app.include_router(users.router, prefix="/users")
-
-
-@app.get("/")
-async def root():
-    return {"message": "Hello Bigger Applications!"}
+app.include_router(products.router, prefix="/products")
 
 
 @app.get("/")
