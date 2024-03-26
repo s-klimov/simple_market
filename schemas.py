@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 
 class UserSchema(BaseModel):
+    id: int
     name: str
 
     class Config:
@@ -11,6 +12,7 @@ class UserSchema(BaseModel):
 
 
 class ProductBase(BaseModel):
+    id: int
     name: str
     count: Optional[int]
 
@@ -20,6 +22,7 @@ class ProductBase(BaseModel):
 
 
 class OrderBase(BaseModel):
+    id: int
     user: UserSchema
     count: Optional[int]
 

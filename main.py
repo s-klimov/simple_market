@@ -1,10 +1,10 @@
-import sqlalchemy
-from fastapi import FastAPI, HTTPException
-from sqlalchemy.future import select
+from fastapi import FastAPI
+
 
 import models
-import schemas
 from database import engine, session
+
+from routers import users
 
 
 app = FastAPI()
@@ -20,6 +20,14 @@ async def startup():
 async def shutdown():
     await session.close()
     await engine.dispose()
+
+
+app.include_router(users.router, prefix="/users")
+
+
+@app.get("/")
+async def root():
+    return {"message": "Hello Bigger Applications!"}
 
 
 @app.get("/")
