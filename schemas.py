@@ -1,4 +1,10 @@
-from pydantic import BaseModel
+from typing import List
+from sqlalchemy.future import select
+
+from pydantic import BaseModel, computed_field
+
+import models
+from database import session
 
 
 class UserSchema(BaseModel):
@@ -20,7 +26,11 @@ class ProductSchema(BaseModel):
 class OrderSchema(BaseModel):
     id: int
     user: UserSchema
-    # todo products: List[ProductSchema]
+
+    @computed_field
+    @property
+    def products(self) -> List[ProductSchema]:
+        return []  # todo products: List[ProductSchema]
 
     class Config:
         from_attributes = True
