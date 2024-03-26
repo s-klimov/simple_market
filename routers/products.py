@@ -11,60 +11,66 @@ from database import session
 router = APIRouter()
 
 
-@router.get("/", tags=["products"], response_model=List[schemas.UserSchema])
-async def get_users() -> List[models.User]:
-    response = await session.execute(select(models.User))
+@router.get("/", tags=["products"], response_model=List[schemas.ProductSchema])
+async def get_products() -> List[models.Product]:
+    response = await session.execute(select(models.Product))
 
     return response.scalars().all()
 
 
-@router.get("/{id}", tags=["products"], response_model=schemas.UserSchema)
-async def get_user(id: int) -> models.User:
-    response = await session.execute(select(models.User).where(models.User.id == id))
-    user = response.scalar_one_or_none()
-    if user is None:
+@router.get("/{id}", tags=["products"], response_model=schemas.ProductSchema)
+async def get_product(id: int) -> models.Product:
+    response = await session.execute(
+        select(models.Product).where(models.Product.id == id)
+    )
+    product = response.scalar_one_or_none()
+    if product is None:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    return user
+    return product
 
 
 @router.post(
     "/",
     tags=["products"],
     status_code=status.HTTP_201_CREATED,
-    response_model=schemas.UserSchema,
+    response_model=schemas.ProductSchema,
 )
-async def create_user(name: str) -> models.User:
-    user = models.User(name=name)
-    session.add(user)
+async def create_product(name: str) -> models.Product:
+    product = models.Product(name=name)
+    session.add(product)
     await session.commit()
-    await session.refresh(user)
-    return user
+    await session.refresh(product)
+    return product
 
 
-@router.put("/{id}", tags=["products"], response_model=schemas.UserSchema)
-async def edit_user(id: int, name: str) -> models.User:
-    response = await session.execute(select(models.User).where(models.User.id == id))
-    user = response.scalar_one_or_none()
-    if user is None:
+@router.put("/{id}", tags=["products"], response_model=schemas.ProductSchema)
+async def edit_product(id: int, name: str) -> models.Product:
+    response = await session.execute(
+        select(models.Product).where(models.Product.id == id)
+    )
+    product = response.scalar_one_or_none()
+    if product is None:
         raise HTTPException(status_code=404, detail="Item not found")
 
     await session.execute(
-        update(models.User).where(models.User.id == id).values(name=name)
+        update(models.Product).where(models.Product.id == id).values(name=name)
     )
     await session.commit()
 
-    return user
+    return product
 
 
 @router.delete("/{id}", tags=["products"])
-async def delete_user(id: int) -> dict:
-    response = await session.execute(select(models.User).where(models.User.id == id))
-    user = response.scalar_one_or_none()
-    if user is None:
+async def delete_product(id: int) -> dict:
+    response = await session.execute(
+        select(models.Product).where(models.Product.id == id)
+    )
+    product = response.scalar_one_or_none()
+    if product is None:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    await session.execute(delete(models.User).where(models.User.id == id))
+    await session.execute(delete(models.Product).where(models.Product.id == id))
     await session.commit()
 
     return {"message": "Item deleted successfully"}

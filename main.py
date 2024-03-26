@@ -4,7 +4,7 @@ from fastapi import FastAPI
 import models
 from database import engine, session
 
-from routers import users, products
+from routers import products, users, orders
 
 
 app = FastAPI()
@@ -24,6 +24,7 @@ async def shutdown():
 
 app.include_router(users.router, prefix="/users")
 app.include_router(products.router, prefix="/products")
+app.include_router(orders.router, prefix="/orders")
 
 
 @app.get("/")

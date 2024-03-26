@@ -2,7 +2,7 @@ from sqlalchemy import Column, String, Integer, ForeignKey
 from sqlalchemy.ext.associationproxy import association_proxy
 
 from database import Base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped
 
 
 class User(Base):
@@ -11,6 +11,9 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
+
+    # Relationships
+    orders = relationship("Order", back_populates="user")
 
 
 # https://www.gormanalysis.com/blog/many-to-many-relationships-in-fastapi/
@@ -27,7 +30,7 @@ class OrderProduct(Base):
     product = relationship("Product", back_populates="orders")
 
     # proxies
-    order_user = association_proxy(target_collection="order", attr="user")
+    order_user = association_proxy(target_collection="order", attr="user.id")
     product_name = association_proxy(target_collection="product", attr="name")
 
 
@@ -39,7 +42,9 @@ class Product(Base):
     name = Column(String, index=True)
 
     # Relationships
-    orders = relationship("OrderProduct", back_populates="product")
+    orders: Mapped[OrderProduct] = relationship(
+        "OrderProduct", back_populates="product"
+    )
 
 
 class Order(Base):
@@ -50,4 +55,5 @@ class Order(Base):
     user_id = Column(Integer, ForeignKey("main.user.id"), nullable=False)
 
     # Relationships
+    user = relationship("User", back_populates="orders")
     products = relationship("OrderProduct", back_populates="order")
