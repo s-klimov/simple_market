@@ -9,8 +9,8 @@ class User(Base):
     __tablename__ = "user"
     __table_args__ = {"schema": "main"}
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String, index=True, unique=True)
 
     # Relationships
     orders = relationship("Order", back_populates="user")
@@ -38,12 +38,12 @@ class Product(Base):
     __tablename__ = "product"
     __table_args__ = {"schema": "main"}
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String, index=True, unique=True)
 
     # Relationships
     orders: Mapped[OrderProduct] = relationship(
-        "OrderProduct", back_populates="product"
+        "OrderProduct", back_populates="product", lazy="selectin"
     )
 
 
@@ -51,9 +51,9 @@ class Order(Base):
     __tablename__ = "order"
     __table_args__ = {"schema": "main"}
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("main.user.id"), nullable=False)
 
     # Relationships
-    user = relationship("User", back_populates="orders")
-    products = relationship("OrderProduct", back_populates="order")
+    user = relationship("User", back_populates="orders", lazy="selectin")
+    products = relationship("OrderProduct", back_populates="order", lazy="selectin")

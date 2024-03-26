@@ -20,6 +20,7 @@ class ProductSchema(BaseModel):
 class OrderSchema(BaseModel):
     id: int
     user: UserSchema
+    # todo products: List[ProductSchema]
 
     class Config:
         from_attributes = True
