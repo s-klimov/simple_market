@@ -28,4 +28,4 @@ class OrderSchema(BaseModel):
 
 
 class OrderExtendSchema(OrderSchema):
-    products: List[ProductSchema] = []  # todo products: List[ProductSchema]
+    products: List[ProductSchema] = []
