@@ -13,25 +13,26 @@ router = APIRouter()
 
 @router.get("/", tags=["orders"], response_model=List[schemas.OrderSchema])
 async def get_orders() -> List[models.Order]:
-    response = await session.execute(
-        select(models.Order).join(models.Order.user)
-        # todo добавить подзадпрос для получения списка продуктов
-    )
+    response = await session.execute(select(models.Order).join(models.Order.user))
 
     return response.scalars().all()
 
 
-@router.get("/{id}", tags=["orders"], response_model=schemas.OrderSchema)
+@router.get("/{id}", tags=["orders"], response_model=schemas.OrderExtendSchema)
 async def get_order(id: int) -> models.Order:
     response = await session.execute(
-        select(models.Order)
-        .join(models.Order.user)
-        .where(models.Order.id == id)
-        # todo добавить подзадпрос для получения списка продуктов
+        select(models.Order).join(models.Order.user).where(models.Order.id == id)
     )
     order = response.scalar_one_or_none()
     if order is None:
         raise HTTPException(status_code=404, detail="Item not found")
+
+    response = await session.execute(
+        select(models.Product)
+        .join(models.OrderProduct)
+        .where(models.OrderProduct.order_id == order.id)
+    )
+    order.__dict__["products"] = response.scalars().all()
 
     return order
 
