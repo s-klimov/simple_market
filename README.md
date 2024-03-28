@@ -26,6 +26,14 @@ poetry install
 ```commandline
 poetry shell
 ```
+3. Запустите СУБД Postgresql (при необходимости)
+```shell
+docker run --name simple-market-db -e POSTGRES_USER=simple -e POSTGRES_PASSWORD=secret -e POSTGRES_DB=market -p 5440:5432 -d postgres
+```
+Как удалить контейнеры с БД
+```shell
+docker rm -f -v simple-market-db
+```
 
 ## Запуск проекта
 
