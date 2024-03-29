@@ -2,21 +2,8 @@ from typing import List
 
 from pydantic import BaseModel
 
-
-class UserSchema(BaseModel):
-    id: int
-    name: str
-
-    class Config:
-        from_attributes = True
-
-
-class ProductSchema(BaseModel):
-    id: int
-    name: str
-
-    class Config:
-        from_attributes = True
+from schemas.products import ProductSchema
+from schemas.users import UserSchema
 
 
 class OrderSchema(BaseModel):

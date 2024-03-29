@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, ForeignKey
+from sqlalchemy import Column, String, Integer, ForeignKey, Boolean
 from sqlalchemy.ext.associationproxy import association_proxy
 
 from database import Base
@@ -11,6 +11,9 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name = Column(String, index=True, unique=True)
+    email = Column(String, index=True, unique=True)
+    hashed_password = Column(String)
+    disable = Column(Boolean, nullable=True)
 
     # Relationships
     orders = relationship("Order", back_populates="user")
