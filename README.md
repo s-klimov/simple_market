@@ -43,10 +43,6 @@ docker rm -f -v simple-market-db
 uvicorn main:app --host 0.0.0.0 --port 5000 --reload
 ```
 
-### Выполните тестирование
-> Модульные тесты запускаются из корневой папки проекта  
-```commandline
-
 ## Используемый стек
 
 * [fastapi](https://fastapi.tiangolo.com/) - FastAPI framework, high performance, easy to learn, fast to code, ready for production
