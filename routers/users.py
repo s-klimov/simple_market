@@ -1,33 +1,87 @@
-from typing import List
+import os
+from datetime import datetime, timedelta, timezone
+from typing import Annotated
 
-from fastapi import APIRouter, status, HTTPException
+from fastapi import APIRouter, status, HTTPException, Depends
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import JWTError, jwt
 from passlib.context import CryptContext
-from sqlalchemy import update
 from sqlalchemy.future import select
 
 import models
 import schemas
 from database import session
 
+SECRET_KEY = os.environ["SECRET_KEY"]
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
 router = APIRouter()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-@router.get("/", tags=["users"], response_model=List[schemas.UserSchema])
-async def get_users() -> List[models.User]:
-    response = await session.execute(select(models.User))
-
-    return response.scalars().all()
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
 
 
-@router.get("/{id}", tags=["users"], response_model=schemas.UserSchema)
-async def get_user(id: int) -> models.User:
-    response = await session.execute(select(models.User).where(models.User.id == id))
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+
+async def get_user(username: str):
+    response = await session.execute(select(models.User).where(models.User.name == username))
     user = response.scalar_one_or_none()
-    if user is None:
-        raise HTTPException(status_code=404, detail="Item not found")
+    if user is not None:
+        return schemas.UserSchema(**user.__dict__)
 
+
+async def authenticate_user(username: str, password: str) -> schemas.UserSchema | bool:
+    user = await get_user(username)
+    if not user:
+        return False
+    if not verify_password(password, user.hashed_password):
+        return False
     return user
+
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise credentials_exception
+        token_data = schemas.TokenData(username=username)
+    except JWTError:
+        raise credentials_exception
+    user = await get_user(username=token_data.username)
+    if user is None:
+        raise credentials_exception
+    return user
+
+
+def get_current_active_user(
+    current_user: Annotated[schemas.UserSchema, Depends(get_current_user)],
+):
+    if current_user.disabled:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return current_user
 
 
 @router.post(
@@ -48,22 +102,24 @@ async def create_user(name: str, email: str, password: str) -> models.User:
     return user
 
 
-@router.put("/{id}", tags=["users"], response_model=schemas.UserSchema)
-async def edit_user(id: int, name: str | None, email: str | None) -> models.User:
-    response = await session.execute(select(models.User).where(models.User.id == id))
-    user = response.scalar_one_or_none()
-    if user is None:
-        raise HTTPException(status_code=404, detail="Item not found")
+@router.post("/token")
+async def login_for_access_token(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+) -> schemas.Token:
+    user = await authenticate_user(form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(data={"sub": user.name}, expires_delta=access_token_expires)
+    return schemas.Token(access_token=access_token, token_type="bearer")
 
-    data = {}
-    if name is not None:
-        data["name"] = name
-    if email is not None:
-        data["email"] = email
 
-    await session.execute(
-        update(models.User).where(models.User.id == id).values(**data)
-    )
-    await session.commit()
-
-    return user
+@router.get("/me", response_model=schemas.UserSchema)
+async def read_users_me(
+    current_user: Annotated[schemas.UserSchema, Depends(get_current_active_user)],
+):
+    return current_user

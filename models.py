@@ -45,9 +45,7 @@ class Product(Base):
     name = Column(String, index=True, unique=True)
 
     # Relationships
-    orders: Mapped[OrderProduct] = relationship(
-        "OrderProduct", back_populates="product", lazy="selectin"
-    )
+    orders: Mapped[OrderProduct] = relationship("OrderProduct", back_populates="product", lazy="selectin")
 
 
 class Order(Base):

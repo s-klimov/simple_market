@@ -20,9 +20,7 @@ async def get_products() -> List[models.Product]:
 
 @router.get("/{id}", tags=["products"], response_model=schemas.ProductSchema)
 async def get_product(id: int) -> models.Product:
-    response = await session.execute(
-        select(models.Product).where(models.Product.id == id)
-    )
+    response = await session.execute(select(models.Product).where(models.Product.id == id))
     product = response.scalar_one_or_none()
     if product is None:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -46,16 +44,12 @@ async def create_product(name: str) -> models.Product:
 
 @router.put("/{id}", tags=["products"], response_model=schemas.ProductSchema)
 async def edit_product(id: int, name: str) -> models.Product:
-    response = await session.execute(
-        select(models.Product).where(models.Product.id == id)
-    )
+    response = await session.execute(select(models.Product).where(models.Product.id == id))
     product = response.scalar_one_or_none()
     if product is None:
         raise HTTPException(status_code=404, detail="Item not found")
 
-    await session.execute(
-        update(models.Product).where(models.Product.id == id).values(name=name)
-    )
+    await session.execute(update(models.Product).where(models.Product.id == id).values(name=name))
     await session.commit()
 
     return product
@@ -63,9 +57,7 @@ async def edit_product(id: int, name: str) -> models.Product:
 
 @router.delete("/{id}", tags=["products"])
 async def delete_product(id: int) -> dict:
-    response = await session.execute(
-        select(models.Product).where(models.Product.id == id)
-    )
+    response = await session.execute(select(models.Product).where(models.Product.id == id))
     product = response.scalar_one_or_none()
     if product is None:
         raise HTTPException(status_code=404, detail="Item not found")
