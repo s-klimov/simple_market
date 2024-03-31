@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi import APIRouter, status, HTTPException
 from passlib.context import CryptContext
-from sqlalchemy import update, delete
+from sqlalchemy import update
 from sqlalchemy.future import select
 
 import models

@@ -1,3 +1,3 @@
-from orders import OrderExtendSchema, OrderSchema
-from products import ProductSchema
-from users import UserSchema
+from orders import OrderExtendSchema, OrderSchema  # noqa F401
+from products import ProductSchema  # noqa F401
+from users import UserSchema  # noqa F401

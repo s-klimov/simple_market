@@ -10,10 +10,10 @@ class User(Base):
     __table_args__ = {"schema": "main"}
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    name = Column(String, index=True, unique=True)
-    email = Column(String, index=True, unique=True)
-    hashed_password = Column(String)
-    disable = Column(Boolean, nullable=True)
+    name = Column(String, index=True, unique=True, nullable=False)
+    email = Column(String, index=True, unique=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    disable = Column(Boolean)
 
     # Relationships
     orders = relationship("Order", back_populates="user")
