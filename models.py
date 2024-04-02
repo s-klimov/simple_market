@@ -2,7 +2,7 @@ from sqlalchemy import Column, String, Integer, ForeignKey, Boolean, UniqueConst
 from sqlalchemy.ext.associationproxy import association_proxy
 
 from database import Base
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship
 
 
 class User(Base):
@@ -16,7 +16,7 @@ class User(Base):
     disable = Column(Boolean)
 
     # Relationships
-    orders = relationship("Order", backref=backref("user", lazy="joined"))
+    orders = relationship("Order", back_populates="user", lazy="selectin")
 
 
 # https://www.gormanalysis.com/blog/many-to-many-relationships-in-fastapi/
@@ -59,6 +59,7 @@ class Order(Base):
 
     # Relationships
     cart = relationship("OrderProduct", back_populates="order", lazy="selectin")
+    user = relationship("User", back_populates="orders", lazy="selectin")
 
     # proxies
     products = association_proxy("cart", "product")

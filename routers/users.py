@@ -7,10 +7,11 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.future import select
+from sqlalchemy.orm import Session
 
 import models
 import schemas
-from database import session
+from database import get_session
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 ALGORITHM = "HS256"
@@ -29,15 +30,15 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-async def get_user(username: str):
+async def get_user(username: str, session: Session):
     response = await session.execute(select(models.User).where(models.User.name == username))
     user = response.scalar_one_or_none()
     if user is not None:
         return schemas.UserSchema(**user.__dict__)
 
 
-async def authenticate_user(username: str, password: str) -> schemas.UserSchema | bool:
-    user = await get_user(username)
+async def authenticate_user(username: str, password: str, session: Session) -> schemas.UserSchema | bool:
+    user = await get_user(username, session)
     if not user:
         return False
     if not verify_password(password, user.hashed_password):
@@ -56,7 +57,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], session: Session = Depends(get_session)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -70,7 +71,7 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
         token_data = schemas.TokenData(username=username)
     except JWTError:
         raise credentials_exception
-    user = await get_user(username=token_data.username)
+    user = await get_user(username=token_data.username, session=session)
     if user is None:
         raise credentials_exception
     return user
@@ -90,7 +91,7 @@ def get_current_active_user(
     status_code=status.HTTP_201_CREATED,
     response_model=schemas.UserSchema,
 )
-async def create_user(name: str, email: str, password: str) -> models.User:
+async def create_user(name: str, email: str, password: str, session: Session = Depends(get_session)) -> models.User:
     user = models.User(
         name=name,
         email=email,
@@ -102,11 +103,12 @@ async def create_user(name: str, email: str, password: str) -> models.User:
     return user
 
 
-@router.post("/token")
+@router.post("/token", tags=["users"])
 async def login_for_access_token(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    session: Session = Depends(get_session),
 ) -> schemas.Token:
-    user = await authenticate_user(form_data.username, form_data.password)
+    user = await authenticate_user(form_data.username, form_data.password, session)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -118,7 +120,7 @@ async def login_for_access_token(
     return schemas.Token(access_token=access_token, token_type="bearer")
 
 
-@router.get("/me", response_model=schemas.UserSchema)
+@router.get("/me", tags=["users"], response_model=schemas.UserSchema)
 async def read_users_me(
     current_user: Annotated[schemas.UserSchema, Depends(get_current_active_user)],
 ):

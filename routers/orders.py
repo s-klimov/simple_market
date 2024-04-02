@@ -3,24 +3,25 @@ from typing import List, Annotated
 from fastapi import APIRouter, status, HTTPException, Query, Path, Depends
 from sqlalchemy import delete
 from sqlalchemy.future import select
+from sqlalchemy.orm import Session
 
 import models
 import schemas
-from database import session
+from database import get_session
 from routers.users import get_current_user
 
 router = APIRouter()
 
 
 @router.get("/", tags=["orders"], response_model=List[schemas.OrderSchema])
-async def get_orders() -> List[models.Order]:
+async def get_orders(session: Session = Depends(get_session)) -> List[models.Order]:
     response = await session.execute(select(models.Order).join(models.Order.user))
 
     return response.scalars().all()
 
 
 @router.get("/{id}", tags=["orders"], response_model=schemas.OrderExtendSchema)
-async def get_order(id: int) -> models.Order:
+async def get_order(id: int, session: Session = Depends(get_session)) -> models.Order:
     response = await session.execute(select(models.Order).join(models.Order.user).where(models.Order.id == id))
     order = response.scalar_one_or_none()
     if order is None:
@@ -43,6 +44,7 @@ async def get_order(id: int) -> models.Order:
 async def create_order(
     current_user: Annotated[schemas.UserSchema, Depends(get_current_user)],
     product_ids: List[int],
+    session: Session = Depends(get_session),
 ) -> models.Order:
     """Создание заказа."""
     order = models.Order(user_id=current_user.id)
@@ -60,6 +62,7 @@ async def create_order(
 async def edit_order(
     id: int = Path(..., gt=0, description="Идентификатор заказа"),
     product_ids: Annotated[List[int], Query(description="Список идентификаторов продуктов")] = ...,
+    session: Session = Depends(get_session),
 ) -> models.Order:
     """Редактирование заказа."""
 
@@ -77,7 +80,7 @@ async def edit_order(
 
 
 @router.delete("/{id}", tags=["orders"])
-async def delete_order(id: int) -> dict:
+async def delete_order(id: int, session: Session = Depends(get_session)) -> dict:
     response = await session.execute(select(models.Order).where(models.Order.id == id))
     order = response.scalar_one_or_none()
     if order is None:
